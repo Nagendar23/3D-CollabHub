@@ -1,8 +1,21 @@
 import dotenv from 'dotenv'
+dotenv.config()
+
+import cloudinary from './config/cloudinary.js'
+
+// Configure cloudinary AFTER dotenv is loaded
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_KEY,
+    api_secret: process.env.CLOUDINARY_SECRET,
+});
+
+console.log("Cloud name:", process.env.CLOUDINARY_NAME);
+console.log("API key:", process.env.CLOUDINARY_KEY);
+console.log("API secret exists:", !!process.env.CLOUDINARY_SECRET);
+
 import app from './app.js'
 import { connectDB } from './config/db.js'
-
-dotenv.config()
 
 const port = process.env.PORT || 8000
 
