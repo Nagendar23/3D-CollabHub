@@ -1,21 +1,24 @@
 "use client";
 
-import API from '@/lib/api'
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth";
 
-export default function HomePage(){
-  const testAPI = async()=>{
-    try{
-      const res = await API.get("/project");
-      console.log(res.data)
-    }catch(err){
-      console.log(err.response?.data)
+export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.replace("/dashboard");
+      return;
     }
-  };
-  return(
-    <main className='p-10'>
-      <button onClick={testAPI} className='bg-blue-500 px-4 py-2 rounded '>
-        TEST API
-      </button>
+
+    router.replace("/login");
+  }, [router]);
+
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      Redirecting...
     </main>
-  )
+  );
 }

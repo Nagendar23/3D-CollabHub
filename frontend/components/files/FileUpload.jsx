@@ -15,9 +15,28 @@ export default function FileUpload({
         fileInputRef.current?.click();
     };
 
+    const validateFile = (f) => {
+        if(!f) return { valid: false, error: "No file selected" };
+
+        const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+        if(f.size > MAX_SIZE) {
+            return { valid: false, error: `File too large (${Math.round(f.size/1024/1024)}MB > 100MB)` };
+        }
+
+        const name = f.name.toLowerCase();
+        const validExts = ['.glb', '.gltf', '.obj', '.stl'];
+        const hasValidExt = validExts.some(ext => name.endsWith(ext));
+        if(!hasValidExt) {
+            return { valid: false, error: `Invalid format. Supported: GLB, GLTF, OBJ, STL` };
+        }
+
+        return { valid: true };
+    };
+
     const handleUpload = async()=>{
-        if(!file) {
-            alert("Please choose a file first");
+        const validation = validateFile(file);
+        if(!validation.valid) {
+            alert(validation.error);
             return;
         }
         try{
@@ -37,7 +56,9 @@ export default function FileUpload({
             await onUploaded?.();
 
         }catch(error){
-            alert(error.response?.data?.message || "Upload failed")
+            const errorMsg = error.response?.data?.message || error.message || "Upload failed";
+            alert(errorMsg);
+            console.error("Upload error:", error);
         }finally{
             setLoading(false)
         }

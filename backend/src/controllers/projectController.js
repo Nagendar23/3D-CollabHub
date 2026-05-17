@@ -1,4 +1,8 @@
 import Project from '../models/projectModel.js'
+import File from '../models/File.js'
+import FileVersion from '../models/FileVersion.js'
+import Comment from '../models/Comment.js'
+import cloudinary from '../config/cloudinary.js'
 
 export const createProject = async (req, res) => {
   try {
@@ -100,6 +104,38 @@ export const deleteProject = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized to access this project' })
     }
 
+    // Get all files in the project
+    const files = await File.find({ project: id })
+
+    // Delete all associated file versions and comments
+    for (const file of files) {
+      // Get all versions for this file
+      const versions = await FileVersion.find({ file: file._id })
+      
+      // Delete Cloudinary files
+      for (const version of versions) {
+        if (version.publicId) {
+          try {
+            await cloudinary.uploader.destroy(version.publicId, {
+              resource_type: 'auto',
+            })
+          } catch (cloudError) {
+            console.log('Error deleting from Cloudinary:', cloudError)
+          }
+        }
+      }
+
+      // Delete versions from DB
+      await FileVersion.deleteMany({ file: file._id })
+
+      // Delete comments
+      await Comment.deleteMany({ file: file._id })
+    }
+
+    // Delete all files
+    await File.deleteMany({ project: id })
+
+    // Delete the project
     await project.deleteOne()
     console.log('Project deleted successfully', project)
     return res.json({ message: 'Project deleted' })
