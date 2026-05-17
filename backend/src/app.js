@@ -7,7 +7,7 @@ import fileRoutes from './routes/fileRoutes.js'
 const app = express();
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: process.env.ORIGIN || "http://localhost:3000",
   credentials: true
 }))
 app.use(express.json())
