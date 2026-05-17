@@ -1,7 +1,7 @@
-import { div } from "three/tsl";
+import { memo } from "react";
 import ProjectCard from "./Projectcard";
 
-export default function ProjectGrid({projects}){
+function ProjectGrid({projects}){
     if(projects.length===0){
         return(
             <p className="text-slate-400">No projects yet</p>
@@ -18,3 +18,5 @@ export default function ProjectGrid({projects}){
         </div>
     )
 }
+
+export default memo(ProjectGrid);

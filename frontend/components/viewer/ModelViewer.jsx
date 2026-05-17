@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 
 import Controls from "./Controls";
 import Lights from "./Lights";
 import Scene from "./Scene";
 
-export default function ModelViewer({ fileUrl, fileName, loading = false, onLoaded }) {
+function ModelViewer({ fileUrl, fileName, versionId, loading = false, onLoaded }) {
     const controlsRef = useRef(null);
 
     const zoomIn = () => {
@@ -24,7 +24,7 @@ export default function ModelViewer({ fileUrl, fileName, loading = false, onLoad
         <div className="relative w-full overflow-hidden rounded-xl bg-slate-900 border border-slate-700" style={{ height: 600 }}>
             <Canvas camera={{ position: [0, 0, 5], fov: 50 }} dpr={[1, 2]}>
                 <Lights />
-                <Scene fileUrl={fileUrl} fileName={fileName} onLoaded={onLoaded} />
+                <Scene fileUrl={fileUrl} fileName={fileName} versionId={versionId} onLoaded={onLoaded} />
                 <Controls ref={controlsRef} />
             </Canvas>
 
@@ -57,3 +57,5 @@ export default function ModelViewer({ fileUrl, fileName, loading = false, onLoad
         </div>
     );
 }
+
+export default memo(ModelViewer);

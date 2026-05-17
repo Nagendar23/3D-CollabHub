@@ -8,15 +8,21 @@ export default function useComments(fileId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetch = async () => {
+  const fetch = async (signal) => {
     try {
       setLoading(true);
-      const res = await API.get(`/files/${fileId}/comments`);
+      setError("");
+      const res = await API.get(`/files/${fileId}/comments`, { signal });
       setComments(res.data || []);
     } catch (err) {
+      if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+        return;
+      }
       setError(err.response?.data?.message || "Failed to fetch comments");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -29,7 +35,11 @@ export default function useComments(fileId) {
 
   useEffect(() => {
     if (!fileId) return;
-    fetch();
+    const controller = new AbortController();
+    setComments([]);
+    fetch(controller.signal);
+
+    return () => controller.abort();
   }, [fileId]);
 
   return { comments, loading, error, fetchComments: fetch, addComment: add };

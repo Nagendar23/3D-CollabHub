@@ -9,23 +9,33 @@ export default function useFile(fileId) {
     const [error, setError] = useState("");
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const fetchFile = async () => {
             try {
                 setLoading(true);
                 setError("");
 
-                const res = await API.get(`/files/${fileId}`);
+                const res = await API.get(`/files/${fileId}`, { signal: controller.signal });
                 setFile(res.data);
             } catch (error) {
+                if (error.name === "CanceledError" || error.code === "ERR_CANCELED") {
+                    return;
+                }
                 setError(error.response?.data?.message || "Failed to fetch file");
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
 
         if (fileId) {
+            setFile(null);
             fetchFile();
         }
+
+        return () => controller.abort();
     }, [fileId]);
 
     return {

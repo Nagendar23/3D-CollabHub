@@ -15,8 +15,11 @@ function getFileExtension(value = "") {
     return dotIndex >= 0 ? lastSegment.slice(dotIndex + 1).toLowerCase() : "";
 }
 
-function GltfModel({ fileUrl, onLoaded }) {
-    const gltf = useGLTF(fileUrl);
+function GltfModel({ fileUrl, versionId, onLoaded }) {
+    const gltf = useGLTF(fileUrl, undefined, (event) => {
+        // Use versionId as cache key for Three.js loader
+        return versionId;
+    });
     const called = useRef(false);
     useEffect(()=>{
         if(gltf && !called.current){
@@ -27,8 +30,9 @@ function GltfModel({ fileUrl, onLoaded }) {
     return <primitive object={gltf.scene} dispose={null} />;
 }
 
-function ObjModel({ fileUrl, onLoaded }) {
-    const object = useLoader(OBJLoader, fileUrl);
+function ObjModel({ fileUrl, versionId, onLoaded }) {
+    // Use versionId as part of cache key to ensure unique loading per version
+    const object = useLoader(OBJLoader, versionId ? `${fileUrl}?v=${versionId}` : fileUrl);
     const called = useRef(false);
     useEffect(()=>{
         if(object && !called.current){
@@ -39,8 +43,9 @@ function ObjModel({ fileUrl, onLoaded }) {
     return <primitive object={object} dispose={null} />;
 }
 
-function StlModel({ fileUrl, onLoaded }) {
-    const geometry = useLoader(STLLoader, fileUrl);
+function StlModel({ fileUrl, versionId, onLoaded }) {
+    // Use versionId as part of cache key to ensure unique loading per version
+    const geometry = useLoader(STLLoader, versionId ? `${fileUrl}?v=${versionId}` : fileUrl);
     const called = useRef(false);
     useEffect(()=>{
         if(geometry && !called.current){
@@ -84,26 +89,26 @@ class ModelErrorBoundary extends Component {
     }
 }
 
-function ModelAsset({ fileUrl, fileName, onLoaded }) {
+function ModelAsset({ fileUrl, fileName, versionId, onLoaded }) {
     // Check fileName first (original filename with extension), then fallback to fileUrl
     const extension = getFileExtension(fileName) || getFileExtension(fileUrl);
 
     if (extension === "glb" || extension === "gltf") {
-        return <GltfModel fileUrl={fileUrl} onLoaded={onLoaded} />;
+        return <GltfModel fileUrl={fileUrl} versionId={versionId} onLoaded={onLoaded} />;
     }
 
     if (extension === "obj") {
-        return <ObjModel fileUrl={fileUrl} onLoaded={onLoaded} />;
+        return <ObjModel fileUrl={fileUrl} versionId={versionId} onLoaded={onLoaded} />;
     }
 
     if (extension === "stl") {
-        return <StlModel fileUrl={fileUrl} onLoaded={onLoaded} />;
+        return <StlModel fileUrl={fileUrl} versionId={versionId} onLoaded={onLoaded} />;
     }
 
     return <UnsupportedModel fileName={fileName} />;
 }
 
-export default function Scene({ fileUrl, fileName, onLoaded }) {
+export default function Scene({ fileUrl, fileName, versionId, onLoaded }) {
     return (
         <ModelErrorBoundary
             fallback={
@@ -124,7 +129,7 @@ export default function Scene({ fileUrl, fileName, onLoaded }) {
                 }
             >
                 <Center>
-                    <ModelAsset fileUrl={fileUrl} fileName={fileName} onLoaded={onLoaded} />
+                    <ModelAsset fileUrl={fileUrl} fileName={fileName} versionId={versionId} onLoaded={onLoaded} />
                 </Center>
             </Suspense>
         </ModelErrorBoundary>

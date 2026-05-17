@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useDeleteProject } from "@/hooks/useDeleteProject";
 import { useRouter } from "next/navigation";
 
-export default function ProjectCard({ project }) {
+function ProjectCard({ project }) {
   const router = useRouter();
   const { deleteProject, loading } = useDeleteProject();
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleDelete = async (e) => {
+  const handleDelete = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -20,7 +20,17 @@ export default function ProjectCard({ project }) {
     } catch (error) {
       alert("Failed to delete project: " + (error.response?.data?.message || error.message));
     }
-  };
+  }, [deleteProject, project._id, router]);
+
+  const openConfirm = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(true);
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setShowConfirm(false);
+  }, []);
 
   return (
     <>
@@ -30,11 +40,7 @@ export default function ProjectCard({ project }) {
           <p className="text-slate-400 mb-4">{project.description || "No description"}</p>
           
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowConfirm(true);
-            }}
+            onClick={openConfirm}
             className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition"
             type="button"
           >
@@ -52,7 +58,7 @@ export default function ProjectCard({ project }) {
             </p>
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => setShowConfirm(false)}
+                onClick={closeConfirm}
                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm"
               >
                 Cancel
@@ -71,3 +77,5 @@ export default function ProjectCard({ project }) {
     </>
   );
 }
+
+export default memo(ProjectCard);

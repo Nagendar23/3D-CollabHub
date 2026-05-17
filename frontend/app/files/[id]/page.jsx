@@ -1,8 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Navbar from "@/components/layout/Navbar";
 import useAuth from "@/hooks/useAuth";
@@ -10,8 +11,16 @@ import useFile from "@/hooks/useFile";
 import useFileVersions from "@/hooks/useFileVersions";
 import { useDeleteFile } from "@/hooks/useDeleteFile";
 import VersionList from "@/components/files/VersionList";
-import ModelViewer from "@/components/viewer/ModelViewer";
 import CommentSection from "@/components/files/CommentSection";
+
+const ModelViewer = dynamic(() => import("@/components/viewer/ModelViewer"), {
+    ssr: false,
+    loading: () => (
+        <div className="flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-slate-400" style={{ height: 600 }}>
+            Loading 3D viewer...
+        </div>
+    ),
+});
 
 export default function FilePage() {
     const { id } = useParams();
@@ -24,7 +33,7 @@ export default function FilePage() {
     const [modelLoading, setModelLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const handleDeleteFile = async () => {
+    const handleDeleteFile = useCallback(async () => {
         try {
             await deleteFile(id);
             router.push("/dashboard");
@@ -32,7 +41,23 @@ export default function FilePage() {
             alert("Failed to delete file: " + (error.response?.data?.message || error.message));
             setShowDeleteConfirm(false);
         }
-    };
+    }, [deleteFile, id, router]);
+
+    const handleVersionSelect = useCallback((version) => {
+        setSelectedVersion(version);
+    }, []);
+
+    const handleModelLoaded = useCallback(() => {
+        setModelLoading(false);
+    }, []);
+
+    const openDeleteModal = useCallback(() => {
+        setShowDeleteConfirm(true);
+    }, []);
+
+    const closeDeleteModal = useCallback(() => {
+        setShowDeleteConfirm(false);
+    }, []);
 
     // Keep selected version in sync when file loads or currentVersion changes
     useEffect(()=>{
@@ -74,7 +99,7 @@ export default function FilePage() {
                     <div className="flex justify-between items-start mb-2">
                         <h1 className="text-3xl font-bold">{file.name}</h1>
                         <button
-                            onClick={() => setShowDeleteConfirm(true)}
+                            onClick={openDeleteModal}
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
                             type="button"
                         >
@@ -101,31 +126,32 @@ export default function FilePage() {
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-4 gap-6">
-                    <div className="md:col-span-3">
-                        {selectedVersion?.fileUrl ? (
-                            <ModelViewer fileUrl={selectedVersion.fileUrl} fileName={file.name} loading={modelLoading} onLoaded={()=>setModelLoading(false)} />
-                        ) : (
-                            <div className="rounded-xl border border-slate-700 bg-slate-800 p-10 text-center text-slate-400">
-                                No version is available for this file yet.
-                            </div>
-                        )}
-                    </div>
+                <div className="mb-8">
+                    {selectedVersion?.fileUrl ? (
+                        <ModelViewer fileUrl={selectedVersion.fileUrl} fileName={file.name} versionId={selectedVersion._id} loading={modelLoading} onLoaded={handleModelLoaded} />
+                    ) : (
+                        <div className="rounded-xl border border-slate-700 bg-slate-800 p-10 text-center text-slate-400">
+                            No version is available for this file yet.
+                        </div>
+                    )}
+                </div>
 
-                    <aside className="md:col-span-1">
+                <div className="grid gap-6 lg:grid-cols-4">
+                    <aside className="lg:col-span-1">
                         <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
                             <h3 className="font-semibold mb-3">Versions</h3>
                             <VersionList
                                 versions={versions}
                                 loading={versionsLoading}
                                 selectedId={selectedVersion?._id}
-                                onSelect={(v)=> setSelectedVersion(v)}
+                                onSelect={handleVersionSelect}
                             />
                         </div>
-                        <div className="mt-4">
-                            <CommentSection fileId={id} />
-                        </div>
                     </aside>
+
+                    <div className="lg:col-span-3">
+                        <CommentSection fileId={id} />
+                    </div>
                 </div>
 
                 {showDeleteConfirm && (
@@ -137,7 +163,7 @@ export default function FilePage() {
                             </p>
                             <div className="flex gap-3 justify-end">
                                 <button
-                                    onClick={() => setShowDeleteConfirm(false)}
+                                    onClick={closeDeleteModal}
                                     className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm"
                                 >
                                     Cancel

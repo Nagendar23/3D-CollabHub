@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import API from "@/lib/api";
 
 export default function useProjects(){
@@ -8,21 +8,30 @@ export default function useProjects(){
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     
-    const fetchProjects = async ()=>{
-        try{
+    const fetchProjects = useCallback(async (signal) => {
+        try {
             setLoading(true);
-            const res = await API.get('/project')
-            setProjects(res.data)
-            setError("")
-        }catch(error){
-            setError(error.response?.data?.message || "Failed to fetch projects")
-        }finally{
-            setLoading(false)
+            setError("");
+            const res = await API.get('/project', { signal });
+            setProjects(res.data);
+        } catch (error) {
+            if (error.name === "CanceledError" || error.code === "ERR_CANCELED") {
+                return;
+            }
+            setError(error.response?.data?.message || "Failed to fetch projects");
+        } finally {
+            if (!signal?.aborted) {
+                setLoading(false);
+            }
         }
-    }
+    }, [])
+
     useEffect(()=>{
-        fetchProjects();
-    },[]);
+        const controller = new AbortController();
+        fetchProjects(controller.signal);
+
+        return () => controller.abort();
+    },[fetchProjects]);
 
     return{
         projects,

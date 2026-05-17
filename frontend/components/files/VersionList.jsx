@@ -1,6 +1,12 @@
 "use client";
 
-export default function VersionList({ versions = [], loading, onSelect, selectedId }) {
+import { memo, useCallback } from "react";
+
+function VersionList({ versions = [], loading, onSelect, selectedId }) {
+    const handleSelect = useCallback((version) => {
+        onSelect(version);
+    }, [onSelect]);
+
     if (loading) {
         return (
             <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
@@ -21,11 +27,11 @@ export default function VersionList({ versions = [], loading, onSelect, selected
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-96 overflow-y-auto">
             {versions.map((v) => (
                 <button
                     key={v._id}
-                    onClick={() => onSelect(v)}
+                    onClick={() => handleSelect(v)}
                     className={`w-full text-left p-3 rounded-md border ${v._id === selectedId ? 'border-blue-500 bg-slate-800' : 'border-slate-700 bg-slate-900'} hover:border-blue-400`}
                 >
                     <div className="flex items-center justify-between">
@@ -33,10 +39,12 @@ export default function VersionList({ versions = [], loading, onSelect, selected
                             <div className="font-semibold">v{v.versionNumber}</div>
                             <div className="text-xs text-slate-400">{new Date(v.createdAt).toLocaleString()}</div>
                         </div>
-                        <div className="text-xs text-slate-400">{Math.round((v.fileSize||0)/1024)} KB</div>
+                        <div className="text-xs text-slate-400">{Math.round((v.fileSize || 0) / 1024)} KB</div>
                     </div>
                 </button>
             ))}
         </div>
     );
 }
+
+export default memo(VersionList);
