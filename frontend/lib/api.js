@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const fallbackBaseURL = "http://localhost:8000/api";
+
 const API = axios.create({
-    baseURL:process.env.NEXT_PUBLIC_API_URL
+    baseURL: process.env.NEXT_PUBLIC_API_URL || fallbackBaseURL
 });
 
 API.interceptors.request.use((config)=>{
