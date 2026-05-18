@@ -3,6 +3,8 @@
 A full-stack platform for collaborative 3D model management, version control, and real-time commenting. Perfect for teams working with 3D assets, CAD files, or 3D artwork.
 
 ---
+# Live URL: https://3d-collabhub.vercel.app/    
+Backend URL: https://threed-collabhub.onrender.com/
 
 ##  What is 3D CollabHub?
 
